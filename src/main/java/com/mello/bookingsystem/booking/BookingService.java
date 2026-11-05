@@ -8,6 +8,8 @@ import com.mello.bookingsystem.diningtable.DiningTableRepository;
 import com.mello.bookingsystem.user.User;
 import com.mello.bookingsystem.user.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.core.NestedExceptionUtils;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -34,7 +36,7 @@ public class BookingService {
 
         User user = userRepository.findById(request.userId())
                 .orElseThrow(() -> new NotFoundException("User " + request.userId() + " not found"));
-        DiningTable table = tableRepository.findById(request.tableId())
+        DiningTable table = tableRepository.findByIdForUpdate(request.tableId())
                 .filter(DiningTable::isActive)
                 .orElseThrow(() -> new NotFoundException("Table " + request.tableId() + " not found"));
 
@@ -54,7 +56,15 @@ public class BookingService {
         booking.setPartySize(request.partySize());
         booking.setStatus(BookingStatus.CONFIRMED);
 
-        return BookingResponse.from(bookingRepository.save(booking));
+        try {
+            return BookingResponse.from(bookingRepository.saveAndFlush(booking));
+        } catch (DataIntegrityViolationException ex) {
+            String cause = NestedExceptionUtils.getMostSpecificCause(ex).getMessage();
+            if (cause != null && cause.contains("no_overlapping_bookings")) {
+                throw new ConflictException("Table is already booked for the requested time");
+            }
+            throw ex;
+        }
     }
 
     @Transactional(readOnly = true)

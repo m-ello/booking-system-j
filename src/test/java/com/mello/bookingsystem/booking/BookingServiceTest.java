@@ -47,7 +47,7 @@ class BookingServiceTest {
         DiningTable table = new DiningTable();
         table.setSeats(seats);
         when(userRepository.findById(1L)).thenReturn(Optional.of(new User()));
-        when(tableRepository.findById(1L)).thenReturn(Optional.of(table));
+        when(tableRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(table));
     }
 
     @Test
