@@ -26,7 +26,7 @@ public class BookingService {
     private final Clock clock;
 
     @Transactional
-    public BookingResponse create(BookingRequest request) {
+    public BookingResponse create(Long userId, BookingRequest request) {
         if (!request.endTime().isAfter(request.startTime())) {
             throw new BadRequestException("End time must be after start time");
         }
@@ -34,8 +34,8 @@ public class BookingService {
             throw new BadRequestException("Start time must be in the future");
         }
 
-        User user = userRepository.findById(request.userId())
-                .orElseThrow(() -> new NotFoundException("User " + request.userId() + " not found"));
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new NotFoundException("User " + userId + " not found"));
         DiningTable table = tableRepository.findByIdForUpdate(request.tableId())
                 .filter(DiningTable::isActive)
                 .orElseThrow(() -> new NotFoundException("Table " + request.tableId() + " not found"));
@@ -68,8 +68,9 @@ public class BookingService {
     }
 
     @Transactional(readOnly = true)
-    public BookingResponse findById(Long id) {
+    public BookingResponse findById(Long id, Long requesterId, boolean admin) {
         return bookingRepository.findById(id)
+                .filter(b -> admin || b.getUser().getId().equals(requesterId))
                 .map(BookingResponse::from)
                 .orElseThrow(() -> new NotFoundException("Booking " + id + " not found"));
     }

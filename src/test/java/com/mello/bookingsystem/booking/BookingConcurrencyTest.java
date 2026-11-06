@@ -50,9 +50,11 @@ class BookingConcurrencyTest {
         table.setSeats(4);
         table = tableRepository.save(table);
 
+        Long userId = user.getId();
+
         Instant start = Instant.now().plus(Duration.ofDays(30));
         Instant end = start.plus(Duration.ofHours(2));
-        BookingRequest request = new BookingRequest(user.getId(), table.getId(), start, end, 2);
+        BookingRequest request = new BookingRequest(table.getId(), start, end, 2);
 
         int threads = 20;
         ExecutorService pool = Executors.newFixedThreadPool(threads);
@@ -68,7 +70,7 @@ class BookingConcurrencyTest {
                 ready.countDown();
                 go.await();               // all threads start at the same moment
                 try {
-                    bookingService.create(request);
+                    bookingService.create(userId, request);
                     successes.incrementAndGet();
                 } catch (ConflictException e) {
                     conflicts.incrementAndGet();

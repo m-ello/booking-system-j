@@ -7,7 +7,6 @@ import java.time.Instant;
 
 // userId is TEMPORARY: in Step 6 it comes from the authenticated user instead
 public record BookingRequest(
-        @NotNull Long userId,
         @NotNull Long tableId,
         @NotNull Instant startTime,
         @NotNull Instant endTime,

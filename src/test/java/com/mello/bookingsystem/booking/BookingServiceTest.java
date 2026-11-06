@@ -52,27 +52,27 @@ class BookingServiceTest {
 
     @Test
     void rejectsEndBeforeStart() {
-        var request = new BookingRequest(1L, 1L, END, START, 2);
-        assertThrows(BadRequestException.class, () -> service.create(request));
+        var request = new BookingRequest(1L, END, START, 2);
+        assertThrows(BadRequestException.class, () -> service.create(1L, request));
     }
 
     @Test
     void rejectsEqualStartAndEnd() {
-        var request = new BookingRequest(1L, 1L, START, START, 2);
-        assertThrows(BadRequestException.class, () -> service.create(request));
+        var request = new BookingRequest( 1L, START, START, 2);
+        assertThrows(BadRequestException.class, () -> service.create(1L, request));
     }
 
     @Test
     void rejectsStartInThePast() {
-        var request = new BookingRequest(1L, 1L, NOW.minusSeconds(3600), END, 2);
-        assertThrows(BadRequestException.class, () -> service.create(request));
+        var request = new BookingRequest( 1L, NOW.minusSeconds(3600), END, 2);
+        assertThrows(BadRequestException.class, () -> service.create(1L, request));
     }
 
     @Test
     void rejectsPartyLargerThanTable() {
         givenUserAndTable(4);
-        var request = new BookingRequest(1L, 1L, START, END, 5);
-        assertThrows(BadRequestException.class, () -> service.create(request));
+        var request = new BookingRequest( 1L, START, END, 5);
+        assertThrows(BadRequestException.class, () -> service.create(1L, request));
         verify(bookingRepository, never()).save(any());
     }
 
@@ -80,8 +80,8 @@ class BookingServiceTest {
     void rejectsOverlappingBooking() {
         givenUserAndTable(4);
         when(bookingRepository.existsOverlap(1L, START, END)).thenReturn(true);
-        var request = new BookingRequest(1L, 1L, START, END, 2);
-        assertThrows(ConflictException.class, () -> service.create(request));
+        var request = new BookingRequest( 1L, START, END, 2);
+        assertThrows(ConflictException.class, () -> service.create(1L, request));
         verify(bookingRepository, never()).save(any());
     }
 
@@ -89,9 +89,9 @@ class BookingServiceTest {
     void savesConfirmedBookingWhenAllRulesPass() {
         givenUserAndTable(4);
         when(bookingRepository.existsOverlap(1L, START, END)).thenReturn(false);
-        when(bookingRepository.save(any(Booking.class))).thenAnswer(inv -> inv.getArgument(0));
+        when(bookingRepository.saveAndFlush(any(Booking.class))).thenAnswer(inv -> inv.getArgument(0));
 
-        BookingResponse response = service.create(new BookingRequest(1L, 1L, START, END, 4));
+        BookingResponse response = service.create(1L,new BookingRequest( 1L, START, END, 4));
 
         assertEquals(BookingStatus.CONFIRMED, response.status());
         assertEquals(4, response.partySize());

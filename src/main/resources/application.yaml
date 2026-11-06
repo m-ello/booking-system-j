@@ -1,6 +1,8 @@
 spring:
   application:
     name: booking-system
+  config:
+    import: optional:file:.env[.properties]
   datasource:
     url: jdbc:postgresql://localhost:5432/booking
     username: booking
@@ -11,3 +13,7 @@ spring:
     open-in-view: false
   flyway:
     enabled: true
+app:
+  jwt:
+    secret: ${JWT_SECRET}
+    expiration-minutes: 60

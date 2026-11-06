@@ -43,4 +43,11 @@ public class GlobalExceptionHandler {
         pd.setTitle("Invalid request");
         return pd;
     }
+
+    @ExceptionHandler(UnauthorizedException.class)
+    ProblemDetail handleUnauthorized(UnauthorizedException ex) {
+        ProblemDetail pd = ProblemDetail.forStatusAndDetail(HttpStatus.UNAUTHORIZED, ex.getMessage());
+        pd.setTitle("Unauthorized");
+        return pd;
+    }
 }
