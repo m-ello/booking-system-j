@@ -23,6 +23,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.POST, "/api/tables").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.PUT, "/api/tables/**").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.DELETE, "/api/tables/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.GET, "/", "/index.html").permitAll()
                         .anyRequest().authenticated())
                 .oauth2ResourceServer(oauth -> oauth
                         .jwt(jwt -> jwt.jwtAuthenticationConverter(converter)));

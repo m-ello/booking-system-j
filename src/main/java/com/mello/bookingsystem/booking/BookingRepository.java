@@ -5,6 +5,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.time.Instant;
+import java.util.List;
 
 public interface BookingRepository extends JpaRepository<Booking, Long> {
 
@@ -18,4 +19,7 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
     boolean existsOverlap(@Param("tableId") Long tableId,
                           @Param("start") Instant start,
                           @Param("end") Instant end);
+
+    @Query("select b from Booking b join fetch b.table where b.user.id = :userId order by b.startTime desc")
+    List<Booking> findByUser(@Param("userId") Long userId);
 }

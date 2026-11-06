@@ -8,6 +8,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
 
 import java.net.URI;
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/bookings")
@@ -30,5 +31,20 @@ public class BookingController {
 
     private static Long userId(Jwt jwt) {
         return Long.valueOf(jwt.getSubject());
+    }
+
+    @GetMapping("/my")
+    public List<BookingResponse> mine(@AuthenticationPrincipal Jwt jwt) {
+        return service.findMine(userId(jwt));
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> cancel(@AuthenticationPrincipal Jwt jwt, @PathVariable Long id) {
+        service.cancel(id, userId(jwt), isAdmin(jwt));
+        return ResponseEntity.noContent().build();
+    }
+
+    private static boolean isAdmin(Jwt jwt) {
+        return "ADMIN".equals(jwt.getClaimAsString("role"));
     }
 }

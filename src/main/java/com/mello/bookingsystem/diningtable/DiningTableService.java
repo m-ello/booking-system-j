@@ -1,10 +1,12 @@
 package com.mello.bookingsystem.diningtable;
 
+import com.mello.bookingsystem.common.BadRequestException;
 import com.mello.bookingsystem.common.NotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Instant;
 import java.util.List;
 
 @Service
@@ -40,6 +42,12 @@ public class DiningTableService {
     @Transactional
     public void deactivate(Long id) {
         getOrThrow(id).setActive(false);
+    }
+
+    @Transactional(readOnly = true)
+    public List<DiningTableResponse> findAvailable(Instant start, Instant end, int partySize) {
+        if (!end.isAfter(start)) throw new BadRequestException("End time must be after start time");
+        return repository.findAvailable(start, end, partySize).stream().map(DiningTableResponse::from).toList();
     }
 
     private DiningTable getOrThrow(Long id) {

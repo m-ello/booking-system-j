@@ -6,6 +6,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.net.URI;
+import java.time.Instant;
 import java.util.List;
 
 @RestController
@@ -40,5 +41,12 @@ public class DiningTableController {
     public ResponseEntity<Void> deactivate(@PathVariable Long id) {
         service.deactivate(id);
         return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/available")
+    public List<DiningTableResponse> available(@RequestParam Instant start,
+                                               @RequestParam Instant end,
+                                               @RequestParam int partySize) {
+        return service.findAvailable(start, end, partySize);
     }
 }

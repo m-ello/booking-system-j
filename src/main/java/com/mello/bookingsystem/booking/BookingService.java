@@ -14,7 +14,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Clock;
+import java.time.Duration;
 import java.time.Instant;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -73,5 +75,22 @@ public class BookingService {
                 .filter(b -> admin || b.getUser().getId().equals(requesterId))
                 .map(BookingResponse::from)
                 .orElseThrow(() -> new NotFoundException("Booking " + id + " not found"));
+    }
+
+    @Transactional(readOnly = true)
+    public List<BookingResponse> findMine(Long userId) {
+        return bookingRepository.findByUser(userId).stream().map(BookingResponse::from).toList();
+    }
+
+    @Transactional
+    public void cancel(Long id, Long requesterId, boolean admin) {
+        Booking b = bookingRepository.findById(id)
+                .filter(x -> admin || x.getUser().getId().equals(requesterId))
+                .orElseThrow(() -> new NotFoundException("Booking " + id + " not found"));
+        if (b.getStatus() == BookingStatus.CANCELLED) return;
+        if (!admin && b.getStartTime().isBefore(Instant.now(clock).plus(Duration.ofHours(2)))) {
+            throw new BadRequestException("Bookings can only be cancelled at least 2 hours before the start");
+        }
+        b.setStatus(BookingStatus.CANCELLED);
     }
 }

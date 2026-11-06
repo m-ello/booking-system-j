@@ -73,7 +73,7 @@ class BookingServiceTest {
         givenUserAndTable(4);
         var request = new BookingRequest( 1L, START, END, 5);
         assertThrows(BadRequestException.class, () -> service.create(1L, request));
-        verify(bookingRepository, never()).save(any());
+        verify(bookingRepository, never()).saveAndFlush(any());
     }
 
     @Test
@@ -82,7 +82,7 @@ class BookingServiceTest {
         when(bookingRepository.existsOverlap(1L, START, END)).thenReturn(true);
         var request = new BookingRequest( 1L, START, END, 2);
         assertThrows(ConflictException.class, () -> service.create(1L, request));
-        verify(bookingRepository, never()).save(any());
+        verify(bookingRepository, never()).saveAndFlush(any());
     }
 
     @Test
