@@ -1,5 +1,6 @@
 package com.mello.bookingsystem.booking;
 
+import com.mello.bookingsystem.AbstractIntegrationTest;
 import com.mello.bookingsystem.common.ConflictException;
 import com.mello.bookingsystem.diningtable.DiningTable;
 import com.mello.bookingsystem.diningtable.DiningTableRepository;
@@ -7,11 +8,6 @@ import com.mello.bookingsystem.user.User;
 import com.mello.bookingsystem.user.UserRepository;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
-import org.testcontainers.postgresql.PostgreSQLContainer;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -25,13 +21,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-@SpringBootTest
-@Testcontainers
-class BookingConcurrencyTest {
+class BookingConcurrencyTest extends AbstractIntegrationTest {
 
-    @Container
-    @ServiceConnection
-    static PostgreSQLContainer postgres = new PostgreSQLContainer("postgres:16");
 
     @Autowired BookingService bookingService;
     @Autowired BookingRepository bookingRepository;
