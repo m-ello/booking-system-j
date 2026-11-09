@@ -60,5 +60,6 @@ public class DiningTableService {
         table.setDescription(r.description());
         table.setSeats(r.seats());
         table.setZone(r.zone());
+        if (r.active() != null) table.setActive(r.active());
     }
 }

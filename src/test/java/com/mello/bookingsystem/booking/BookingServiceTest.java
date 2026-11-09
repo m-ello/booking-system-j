@@ -2,6 +2,7 @@ package com.mello.bookingsystem.booking;
 
 import com.mello.bookingsystem.common.BadRequestException;
 import com.mello.bookingsystem.common.ConflictException;
+import com.mello.bookingsystem.common.NotFoundException;
 import com.mello.bookingsystem.diningtable.DiningTable;
 import com.mello.bookingsystem.diningtable.DiningTableRepository;
 import com.mello.bookingsystem.user.User;
@@ -13,6 +14,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.Clock;
+import java.time.Duration;
 import java.time.Instant;
 import java.time.ZoneOffset;
 import java.util.Optional;
@@ -95,5 +97,45 @@ class BookingServiceTest {
 
         assertEquals(BookingStatus.CONFIRMED, response.status());
         assertEquals(4, response.partySize());
+    }
+
+    private Booking bookingOf(long ownerId, Instant start) {
+        User owner = new User();
+        owner.setId(ownerId);
+        Booking b = new Booking();
+        b.setUser(owner);
+        b.setStartTime(start);
+        b.setStatus(BookingStatus.CONFIRMED);
+        return b;
+    }
+
+    @Test
+    void ownerCancelsBookingFarInTheFuture() {
+        Booking b = bookingOf(1L, NOW.plus(Duration.ofDays(2)));
+        when(bookingRepository.findById(5L)).thenReturn(Optional.of(b));
+        service.cancel(5L, 1L, false);
+        assertEquals(BookingStatus.CANCELLED, b.getStatus());
+    }
+
+    @Test
+    void userCannotCancelWithinTwoHoursOfStart() {
+        Booking b = bookingOf(1L, NOW.plus(Duration.ofHours(1)));
+        when(bookingRepository.findById(5L)).thenReturn(Optional.of(b));
+        assertThrows(BadRequestException.class, () -> service.cancel(5L, 1L, false));
+        assertEquals(BookingStatus.CONFIRMED, b.getStatus());
+    }
+
+    @Test
+    void adminCanCancelWithinTwoHoursOfStart() {
+        Booking b = bookingOf(1L, NOW.plus(Duration.ofHours(1)));
+        when(bookingRepository.findById(5L)).thenReturn(Optional.of(b));
+        service.cancel(5L, 99L, true);
+        assertEquals(BookingStatus.CANCELLED, b.getStatus());
+    }
+
+    @Test
+    void otherUsersBookingLooksNonExistent() {
+        when(bookingRepository.findById(5L)).thenReturn(Optional.of(bookingOf(1L, NOW.plus(Duration.ofDays(2)))));
+        assertThrows(NotFoundException.class, () -> service.cancel(5L, 2L, false));
     }
 }

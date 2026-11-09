@@ -1,5 +1,6 @@
 package com.mello.bookingsystem.booking;
 
+import com.mello.bookingsystem.common.PageResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -8,6 +9,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
 
 import java.net.URI;
+import java.time.Instant;
 import java.util.List;
 
 @RestController
@@ -46,5 +48,19 @@ public class BookingController {
 
     private static boolean isAdmin(Jwt jwt) {
         return "ADMIN".equals(jwt.getClaimAsString("role"));
+    }
+
+    @GetMapping
+    public PageResponse<BookingResponse> search(
+            @RequestParam(required = false) BookingStatus status,
+            @RequestParam(required = false) Long tableId,
+            @RequestParam(required = false) String email,
+            @RequestParam(required = false) Instant from,
+            @RequestParam(required = false) Instant to,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size,
+            @RequestParam(defaultValue = "startTime") String sort,
+            @RequestParam(defaultValue = "desc") String dir) {
+        return service.search(new BookingFilter(status, tableId, email, from, to), page, size, sort, dir);
     }
 }

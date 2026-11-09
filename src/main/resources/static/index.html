@@ -360,6 +360,7 @@
         <div class="tabs" id="tabs">
             <button data-tab="book" class="on">Find a table</button>
             <button data-tab="mine">My bookings</button>
+            <button data-tab="all" id="allTab" hidden>All bookings</button>
             <button data-tab="admin" id="adminTab" hidden>Manage tables</button>
         </div>
 
@@ -378,6 +379,24 @@
 
         <div id="mine" class="card" hidden></div>
 
+        <div id="all" hidden>
+            <form id="filterForm" class="card">
+                <h1>All bookings</h1>
+                <div class="row">
+                    <div><label for="fs">Status</label><select id="fs"><option value="">Any</option><option>CONFIRMED</option><option>CANCELLED</option><option>PENDING</option></select></div>
+                    <div><label for="ft">Table</label><select id="ft"><option value="">Any</option></select></div>
+                    <div><label for="fe">Guest email contains</label><input id="fe" type="text"></div>
+                </div>
+                <div class="row">
+                    <div><label for="ff">From date</label><input id="ff" type="date"></div>
+                    <div><label for="fto">To date</label><input id="fto" type="date"></div>
+                    <div><label for="fo">Order</label><select id="fo"><option value="desc">Latest first</option><option value="asc">Earliest first</option></select></div>
+                </div>
+                <p><button>Apply filters</button> <button type="button" class="ghost" id="fclear">Clear</button></p>
+            </form>
+            <div id="allList" class="card"></div>
+        </div>
+
         <div id="admin" hidden>
             <form id="tableForm" class="card">
                 <h1 id="formTitle">Add a table</h1>
@@ -387,6 +406,7 @@
                     <div><label for="tz">Area</label><select id="tz"><option>INDOOR</option><option>TERRACE</option><option>BAR</option><option>PRIVATE</option></select></div>
                 </div>
                 <label for="td">Note (optional)</label><input id="td" maxlength="500" placeholder="By the window">
+                <label for="ta"><input id="ta" type="checkbox" checked>Available for booking</label>
                 <p><button id="tableBtn">Add table</button> <button type="button" class="ghost" id="tableCancel" hidden>Stop editing</button></p>
             </form>
             <div id="tables" class="card"></div>
@@ -424,14 +444,15 @@
         const me = token && parse(token);
         if (!me){ token = null; localStorage.removeItem('token'); }
         $('#auth').hidden = !!me; $('#app').hidden = !me; $('#who').hidden = !me;
-        if (me){ $('#email').textContent = me.email; $('#role').textContent = me.role; $('#adminTab').hidden = me.role !== 'ADMIN'; tab('book'); }
+        if (me){ $('#email').textContent = me.email; $('#role').textContent = me.role; $('#adminTab').hidden = me.role !== 'ADMIN'; $('#allTab').hidden = me.role !== 'ADMIN'; tab('book'); }
     }
     function logout(){ token = null; localStorage.removeItem('token'); show(); }
 
     function tab(name){
         document.querySelectorAll('#tabs button').forEach(b => b.classList.toggle('on', b.dataset.tab === name));
-        ['book','mine','admin'].forEach(n => $('#'+n).hidden = n !== name);
+        ['book','mine','all','admin'].forEach(n => $('#'+n).hidden = n !== name);
         if (name === 'mine') loadMine();
+        if (name === 'all') loadAll(0);
         if (name === 'admin') loadTables();
     }
 
@@ -509,7 +530,7 @@
     }
     $('#tableForm').onsubmit = async e => {
         e.preventDefault();
-        const body = JSON.stringify({label:$('#tl').value, description:$('#td').value || null, seats:+$('#ts').value, zone:$('#tz').value});
+        const body = JSON.stringify({label:$('#tl').value, description:$('#td').value || null, seats:+$('#ts').value, zone:$('#tz').value, active:$('#ta').checked});
         try {
             if (editingId) { await api('/tables/' + editingId, {method:'PUT', body}); toast('Table updated.'); }
             else { await api('/tables', {method:'POST', body}); toast('Table added.'); }
@@ -521,13 +542,45 @@
         const edit = e.target.dataset.edit, off = e.target.dataset.off;
         if (edit) {
             const t = tableList.find(x => x.id == edit); if (!t) return;
-            editingId = t.id; $('#tl').value = t.label; $('#td').value = t.description || ''; $('#ts').value = t.seats; $('#tz').value = t.zone;
+            editingId = t.id; $('#tl').value = t.label; $('#td').value = t.description || ''; $('#ts').value = t.seats; $('#tz').value = t.zone; $('#ta').checked = t.active;
             $('#formTitle').textContent = 'Edit table ' + t.label; $('#tableBtn').textContent = 'Save changes'; $('#tableCancel').hidden = false;
             $('#tableForm').scrollIntoView({block:'center'}); $('#tl').focus();
         } else if (off) {
             try { await api('/tables/' + off, {method:'DELETE'}); toast('Table deactivated.'); loadTables(); }
             catch (err) { toast(err.message); }
         }
+    };
+
+    // All bookings (admin)
+    let allPage = 0;
+    async function loadAll(page = 0){
+        allPage = page;
+        try {
+            const sel = $('#ft'), keep = sel.value; sel.length = 1;
+            (await api('/tables')).forEach(t => sel.add(new Option(t.label, t.id))); sel.value = keep;
+            const q = new URLSearchParams({page, size:10, sort:'startTime', dir:$('#fo').value});
+            if ($('#fs').value) q.set('status', $('#fs').value);
+            if (sel.value) q.set('tableId', sel.value);
+            if ($('#fe').value.trim()) q.set('email', $('#fe').value.trim());
+            if ($('#ff').value) q.set('from', new Date($('#ff').value + 'T00:00').toISOString());
+            if ($('#fto').value) { const d = new Date($('#fto').value + 'T00:00'); d.setDate(d.getDate() + 1); q.set('to', d.toISOString()); }
+            const r = await api('/bookings?' + q);
+            $('#allList').innerHTML = (r.content.length ? r.content.map(b => `<div class="item"><div><strong>${esc(b.tableLabel)}</strong><span class="pill ${b.status}">${b.status.toLowerCase()}</span>
+        <div class="muted">${fmt(b.startTime)} to ${clock(b.endTime)}, ${b.partySize} guests, ${esc(b.userEmail)}</div></div>
+        ${b.status === 'CONFIRMED' ? `<button class="ghost small" data-cancel="${b.id}">Cancel booking</button>` : ''}</div>`).join('')
+                    : '<p class="muted">No bookings match these filters.</p>')
+                + `<div class="pager"><button class="ghost small" data-page="${r.page - 1}" ${r.page === 0 ? 'disabled' : ''}>Previous</button>
+         <span class="muted">Page ${r.page + 1} of ${Math.max(r.totalPages, 1)}, ${r.totalElements} bookings</span>
+         <button class="ghost small" data-page="${r.page + 1}" ${r.page + 1 >= r.totalPages ? 'disabled' : ''}>Next</button></div>`;
+        } catch (err) { toast(err.message); }
+    }
+    $('#filterForm').onsubmit = e => { e.preventDefault(); loadAll(0); };
+    $('#fclear').onclick = () => { $('#filterForm').reset(); loadAll(0); };
+    $('#allList').onclick = async e => {
+        if (e.target.dataset.page !== undefined) { loadAll(+e.target.dataset.page); return; }
+        const id = e.target.dataset.cancel; if (!id || !confirm('Cancel this booking?')) return;
+        try { await api('/bookings/' + id, {method:'DELETE'}); toast('Booking cancelled.'); loadAll(allPage); }
+        catch (err) { toast(err.message); }
     };
 
     show();
