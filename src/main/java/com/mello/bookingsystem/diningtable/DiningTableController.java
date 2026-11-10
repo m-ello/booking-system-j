@@ -1,5 +1,7 @@
 package com.mello.bookingsystem.diningtable;
 
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -9,6 +11,8 @@ import java.net.URI;
 import java.time.Instant;
 import java.util.List;
 
+@Tag(name = "Tables")
+@SecurityRequirement(name = "bearerAuth")
 @RestController
 @RequestMapping("/api/tables")
 @RequiredArgsConstructor

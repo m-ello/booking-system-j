@@ -1,6 +1,8 @@
 package com.mello.bookingsystem.booking;
 
 import com.mello.bookingsystem.common.PageResponse;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -12,6 +14,8 @@ import java.net.URI;
 import java.time.Instant;
 import java.util.List;
 
+@Tag(name = "Bookings")
+@SecurityRequirement(name = "bearerAuth")
 @RestController
 @RequestMapping("/api/bookings")
 @RequiredArgsConstructor
