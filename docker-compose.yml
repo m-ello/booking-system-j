@@ -27,5 +27,11 @@ services:
       JWT_SECRET: ${JWT_SECRET}
     ports:
       - "8080:8080"
+  web:
+    build: ./frontend
+    depends_on:
+      - app
+    ports:
+      - "3000:80"
 volumes:
   booking-db-data:

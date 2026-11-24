@@ -24,7 +24,6 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.POST, "/api/tables").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.PUT, "/api/tables/**").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.DELETE, "/api/tables/**").hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.GET, "/", "/index.html").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/bookings").hasRole("ADMIN")
                         .anyRequest().authenticated())
                 .oauth2ResourceServer(oauth -> oauth
