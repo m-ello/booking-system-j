@@ -108,6 +108,19 @@ input[type=checkbox] {
   margin-right: 8px
 }
 
+textarea {
+  width: 100%;
+  min-height: 40px;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: var(--bg);
+  color: var(--ink);
+  font: inherit;
+  resize: none;
+  overflow: hidden;
+}
+
 button {
   cursor: pointer;
   border: 1px solid var(--brand);
@@ -197,6 +210,17 @@ button:disabled {
 
 .item:first-of-type {
   border-top: 0
+}
+
+.item > div:first-child {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.item > div:nth-child(2){
+  width: 155px;
+  flex-shrink: 0;
+  white-space: nowrap;
 }
 
 .seats {
